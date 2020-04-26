@@ -241,7 +241,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"mk_usdcat_all", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"mk_usdcat_all \u2014 @mushogenshin", None))
         self.prerequisite_grpBx.setTitle(QCoreApplication.translate("MainWindow", u"PREREQUISITES:  HYTHON + USDCAT", None))
         self.preq_houdini_bin_folder_label.setText(QCoreApplication.translate("MainWindow", u"Houdini bin folder:", None))
         self.preq_houdini_bin_folder_lineEdit.setText("")
