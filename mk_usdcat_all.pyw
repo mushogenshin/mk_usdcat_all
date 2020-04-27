@@ -19,7 +19,9 @@ logging.basicConfig(
 )
 
 _REQUIRED_BINARIES = ('hython.exe', 'usdcat')
-_USD_FILE_FORMATS = ('.usd', '.usda')
+_ALL_USD_EXTS = ('.usd', '.usdc', '.usda')
+_USD_DEFAULT_EXT = '.usd'
+_USD_ASCII_FORMATS = {False: 'usdc', True: 'usda'}
 
 
 class USDCatAll(QtWidgets.QWidget):
@@ -31,7 +33,7 @@ class USDCatAll(QtWidgets.QWidget):
 
 def log_exec_time(func):
     '''
-    simple utility function to log execution time
+    Simple utility function to log execution time
     '''
     def wrapper(*args, **kwargs):
         start_time = time.time()
@@ -64,6 +66,10 @@ def ui_init(ui):
         validate_label=ui.preq_houdini_bin_folder_validate_status_label,
         required_files=_REQUIRED_BINARIES
     )
+    enable_del_orig_option(
+        ui.usdcat_change_extension_checkBox.isChecked(),
+        ui.usdcat_delete_originals_checkBox
+    )
 
     ui.usdcat_folder_to_batch_lineEdit.setFocus()
 
@@ -86,12 +92,18 @@ def create_connections(ui):
         get_folder_method=ui.preq_houdini_bin_folder_lineEdit.text
     ))
 
+    ui.usdcat_change_extension_checkBox.toggled.connect(partial(
+        enable_del_orig_option,
+        del_orig_option_widget=ui.usdcat_delete_originals_checkBox
+    ))
+
     ui.usdcat_folder_to_batch_lineEdit.returnPressed.connect(partial(
         batch_conversion,
         get_bin_folder_method=ui.preq_houdini_bin_folder_lineEdit.text,
         get_folder_to_usdcat_method=ui.usdcat_folder_to_batch_lineEdit.text,
         get_ascii_output_mode_method=ui.usdcat_output_ascii_radioButton.isChecked,
-        get_remove_orig_mode_method=ui.usdcat_del_orig_checkBox.isChecked,
+        get_change_extension_mode_method=ui.usdcat_change_extension_checkBox.isChecked,
+        get_remove_orig_mode_method=ui.usdcat_delete_originals_checkBox.isChecked,
         progress_widget=ui.usdcat_batch_progressBar
     ))
 
@@ -166,47 +178,66 @@ def visualize_folder_input_validation(line_edit, validate_label, required_files=
         validate_result
     )
 
+def enable_del_orig_option(checked, del_orig_option_widget):
+    del_orig_option_widget.setEnabled(checked)
+
 def get_usd_input_output_extensions(ascii_output_mode):
     '''
-    :param bool ascii_output_mode:
+    :param int ascii_output_mode:
     '''
-    if ascii_output_mode:
-        # Output ASCII
-        infile_ext, outfile_ext = _USD_FILE_FORMATS
-    else:
-        # Output binary
-        outfile_ext, infile_ext = _USD_FILE_FORMATS
+    infile_ext = '.' + _USD_ASCII_FORMATS[not ascii_output_mode]
+    outfile_ext = '.' + _USD_ASCII_FORMATS[ascii_output_mode]
 
     return infile_ext, outfile_ext
 
 @log_exec_time
-def batch_usdcat(hython_path, usdcat_module_path, folder_to_usdcat, ascii_output_mode, remove_orig, progress_widget):
+def batch_usdcat(hython_path, usdcat_module_path, folder_to_usdcat, ascii_output_mode, change_extension, remove_orig, progress_widget):
     '''
     :param Path folder_to_usdcat:
     '''
     progress_widget.setValue(0)
-    infile_ext, outfile_ext = get_usd_input_output_extensions(ascii_output_mode=ascii_output_mode)
+    
+    # Assuming default behavior is not changing the extension
+    infile_ext = _USD_DEFAULT_EXT
 
-    infiles = tuple(folder_to_usdcat.rglob('*' + infile_ext))
+    if change_extension:
+        infile_ext, outfile_ext = get_usd_input_output_extensions(ascii_output_mode=ascii_output_mode)
+
+    infiles = set()
+    for usd_ext in _ALL_USD_EXTS:
+        infiles.update(tuple(folder_to_usdcat.rglob('*' + usd_ext)))  # taking even .usdc or .usda
+
     num_jobs = len(infiles)
     logging.debug('PERFORMING {} "USDCAT CONVERSION" jobs...'.format(num_jobs))
 
     for i, infile in enumerate(infiles):
 
         logging.debug('--Converting asset: {}'.format(infile.name))
-    
-        cmd = [
-            hython_path,
-            usdcat_module_path,
-            infile.as_posix(),
-            '--out',
-            infile.with_suffix(outfile_ext).as_posix()
-        ]
 
-        subprocess_call(cmd)
+        if not change_extension:
+            cmd = [
+                hython_path,
+                usdcat_module_path,
+                infile.as_posix(),
+                '--out',
+                infile.as_posix(),  # retaining the .usd extension and overwriting files
+                '--usdFormat',
+                _USD_ASCII_FORMATS[ascii_output_mode]
+            ]
+            subprocess_call(cmd)
+        else:
+            cmd = [
+                hython_path,
+                usdcat_module_path,
+                infile.as_posix(),
+                '--out',
+                infile.with_suffix(outfile_ext).as_posix()
+            ]
 
-        if remove_orig:
-            infile.unlink()
+            subprocess_call(cmd)
+
+            if remove_orig:
+                infile.unlink()
 
         progress_widget.setValue(round(i / num_jobs * 100))
         QtCore.QCoreApplication.processEvents()  # update the progress bar visually
@@ -219,7 +250,14 @@ def subprocess_call(cmd):
     except Exception as e:
         logging.warning('--Failed: {}'.format(e))
    
-def batch_conversion(get_bin_folder_method, get_folder_to_usdcat_method, get_ascii_output_mode_method, get_remove_orig_mode_method, progress_widget):
+def batch_conversion(
+    get_bin_folder_method, 
+    get_folder_to_usdcat_method, 
+    get_ascii_output_mode_method, 
+    get_change_extension_mode_method, 
+    get_remove_orig_mode_method, 
+    progress_widget
+):
     # Sanity check
     bin_path = get_bin_folder_method()
     folder_to_usdcat = get_folder_to_usdcat_method()
@@ -228,6 +266,7 @@ def batch_conversion(get_bin_folder_method, get_folder_to_usdcat_method, get_asc
     folder_to_usdcat_validated = validate_folder_path(folder_to_usdcat)
 
     ascii_output_mode = get_ascii_output_mode_method()
+    change_extension = get_change_extension_mode_method()
 
     if bin_path_validated and folder_to_usdcat_validated:
 
@@ -243,6 +282,7 @@ def batch_conversion(get_bin_folder_method, get_folder_to_usdcat_method, get_asc
             usdcat_module_path=usdcat_module_path.as_posix(),
             folder_to_usdcat=folder_to_usdcat, 
             ascii_output_mode=ascii_output_mode,
+            change_extension=change_extension,
             remove_orig=get_remove_orig_mode_method(),
             progress_widget=progress_widget
         )
@@ -253,15 +293,17 @@ def batch_conversion(get_bin_folder_method, get_folder_to_usdcat_method, get_asc
             ascii_output_mode=ascii_output_mode
         )
 
-        if ascii_output_mode:
-            # Convert USD format with usdcat before editing file content
-            do_batch_usdcat()
-            do_edit_usd_asset_path()
-
+        if not change_extension:
+            do_batch_usdcat()  # No need for editing file content
         else:
-            # Edit file content before converting USD format with usdcat
-            do_edit_usd_asset_path()
-            do_batch_usdcat()
+            if ascii_output_mode:
+                # Convert USD format with usdcat before editing file content
+                do_batch_usdcat()
+                do_edit_usd_asset_path()
+            else:
+                # Edit file content before converting USD format with usdcat
+                do_edit_usd_asset_path()
+                do_batch_usdcat()
 
         progress_widget.setValue(100)
     else:
@@ -277,14 +319,21 @@ def edit_usd_asset_path(folder_to_usdcat, ascii_output_mode):
     '''
     infile_ext, outfile_ext = get_usd_input_output_extensions(ascii_output_mode=ascii_output_mode)
 
-    files_to_edit = tuple(folder_to_usdcat.rglob('*' + _USD_FILE_FORMATS[-1]))  # only editing .usda is relevant
+    files_to_edit = tuple(folder_to_usdcat.rglob('*' + _USD_ASCII_FORMATS[True]))  # only editing .usda is relevant
     logging.debug('PERFORMING {} "USD ASSET PATH EDIT" jobs...'.format(len(files_to_edit)))
 
     files_to_edit = [infile.as_posix() for infile in files_to_edit]
 
+    # First edit if found '.usdc' or '.usda'
     with fileinput.input(files=files_to_edit, inplace=True) as usdfile:
         for line in usdfile:
             print(line.replace(infile_ext + '@', outfile_ext + '@'), end='')
+
+    # Second edit if found '.usd'
+    with fileinput.input(files=files_to_edit, inplace=True) as usdfile:
+        for line in usdfile:
+            print(line.replace(_USD_DEFAULT_EXT + '@', outfile_ext + '@'), end='')    
+
 
 def open_explorer(get_folder_method):
 
@@ -298,9 +347,9 @@ def launch_usdview(get_bin_folder_method, get_file_to_usdview_method):
     file_to_usdview = Path(get_file_to_usdview_method())
 
     bin_path_validated = validate_folder_path(bin_path, _REQUIRED_BINARIES)
-    file_to_usdview_validated = file_to_usdview.exists() and file_to_usdview.suffix in _USD_FILE_FORMATS
+    # file_to_usdview_validated = file_to_usdview.exists() and file_to_usdview.suffix in _USD_ASCII_FORMATS
 
-    if bin_path_validated and file_to_usdview_validated:
+    if bin_path_validated:
 
         bin_path = Path(bin_path)
         hython_path = bin_path / 'hython.exe'

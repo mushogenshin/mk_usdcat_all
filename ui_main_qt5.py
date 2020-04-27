@@ -136,11 +136,22 @@ class Ui_MainWindow(object):
 
         self.usdcat_HLayout.addItem(self.usdcat_horizontalSpacer)
 
-        self.usdcat_del_orig_checkBox = QCheckBox(self.usdcat_main_grpBx)
-        self.usdcat_del_orig_checkBox.setObjectName(u"usdcat_del_orig_checkBox")
-        self.usdcat_del_orig_checkBox.setChecked(True)
+        self.usdcat_change_extension_VLayout = QVBoxLayout()
+        self.usdcat_change_extension_VLayout.setObjectName(u"usdcat_change_extension_VLayout")
+        self.usdcat_change_extension_VLayout.setContentsMargins(0, 0, 0, 0)
+        self.usdcat_change_extension_checkBox = QCheckBox(self.usdcat_main_grpBx)
+        self.usdcat_change_extension_checkBox.setObjectName(u"usdcat_change_extension_checkBox")
 
-        self.usdcat_HLayout.addWidget(self.usdcat_del_orig_checkBox)
+        self.usdcat_change_extension_VLayout.addWidget(self.usdcat_change_extension_checkBox)
+
+        self.usdcat_delete_originals_checkBox = QCheckBox(self.usdcat_main_grpBx)
+        self.usdcat_delete_originals_checkBox.setObjectName(u"usdcat_delete_originals_checkBox")
+        self.usdcat_delete_originals_checkBox.setChecked(True)
+
+        self.usdcat_change_extension_VLayout.addWidget(self.usdcat_delete_originals_checkBox)
+
+
+        self.usdcat_HLayout.addLayout(self.usdcat_change_extension_VLayout)
 
 
         self.usdcat_grpBx_VLayout.addLayout(self.usdcat_HLayout)
@@ -253,7 +264,8 @@ class Ui_MainWindow(object):
         self.usdcat_output_format_grpBx.setTitle("")
         self.usdcat_output_binary_radioButton.setText(QCoreApplication.translate("MainWindow", u"to Binary (Crate)", None))
         self.usdcat_output_ascii_radioButton.setText(QCoreApplication.translate("MainWindow", u"to ASCII", None))
-        self.usdcat_del_orig_checkBox.setText(QCoreApplication.translate("MainWindow", u"Del Orig.", None))
+        self.usdcat_change_extension_checkBox.setText(QCoreApplication.translate("MainWindow", u"Change Extension", None))
+        self.usdcat_delete_originals_checkBox.setText(QCoreApplication.translate("MainWindow", u"Delete Originals", None))
         self.usdcat_folder_grpBx.setTitle("")
         self.usdcat_folder_to_batch_label.setText(QCoreApplication.translate("MainWindow", u"Folder to usdcat:", None))
         self.usdcat_instruction_label.setText(QCoreApplication.translate("MainWindow", u"Drag'n'Drop, or paste link to folder, then press Enter", None))
