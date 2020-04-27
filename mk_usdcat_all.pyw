@@ -5,15 +5,15 @@ from functools import partial
 import subprocess
 import fileinput
 import time
-import logging
+import logging as logger
 
 from PySide2 import QtWidgets
 from PySide2 import QtCore
 
 from ui_main_qt5 import Ui_MainWindow
 
-logging.basicConfig(
-    level=logging.DEBUG, 
+logger.basicConfig(
+    level=logger.DEBUG, 
     filename='mk_usdcat_all.log',
     format='%(asctime)s:%(levelname)s:%(message)s'
 )
@@ -39,7 +39,7 @@ def log_exec_time(func):
         start_time = time.time()
         ret = func(*args, **kwargs)
         exec_time = time.time() - start_time
-        logging.debug(
+        logger.debug(
             '****Execution time: {:.3f} second (--in "{}").'.format(exec_time, func.__name__)
         )
         return ret
@@ -142,14 +142,14 @@ def validate_folder_path(folder_path, required_files=()):
     folder_path = Path(folder_path)
 
     if not folder_path.exists():
-        logging.warning('Folder does not exist: {}'.format(folder_path))
+        logger.warning('Folder does not exist: {}'.format(folder_path))
         return False
     else:
         # Validate all the specified files inside
         for required_file in required_files:
             required_file = (folder_path / required_file)
             if not (required_file.exists() and required_file.is_file()):
-                logging.warning('File does not exist: {}'.format(required_file))
+                logger.warning('File does not exist: {}'.format(required_file))
                 return False
 
     return True
@@ -208,11 +208,11 @@ def batch_usdcat(hython_path, usdcat_module_path, folder_to_usdcat, ascii_output
         infiles.update(tuple(folder_to_usdcat.rglob('*' + usd_ext)))  # taking even .usdc or .usda
 
     num_jobs = len(infiles)
-    logging.debug('PERFORMING {} "USDCAT CONVERSION" jobs...'.format(num_jobs))
+    logger.debug('PERFORMING {} "USDCAT CONVERSION" jobs...'.format(num_jobs))
 
     for i, infile in enumerate(infiles):
 
-        logging.debug('--Converting asset: {}'.format(infile.name))
+        logger.debug('--Converting asset: {}'.format(infile.name))
 
         if not change_extension:
             cmd = [
@@ -244,11 +244,11 @@ def batch_usdcat(hython_path, usdcat_module_path, folder_to_usdcat, ascii_output
 
 @log_exec_time
 def subprocess_call(cmd):
-    # logging.debug(str(cmd))
+    # logger.debug(str(cmd))
     try:
         subprocess.call(cmd)
     except Exception as e:
-        logging.warning('--Failed: {}'.format(e))
+        logger.warning('--Failed: {}'.format(e))
    
 def batch_conversion(
     get_bin_folder_method, 
@@ -307,7 +307,7 @@ def batch_conversion(
 
         progress_widget.setValue(100)
     else:
-        logging.error('Invalid input. Aborted')
+        logger.error('Invalid input. Aborted')
 
 def count_jobs(generator_obj):
     return len(tuple(generator_obj))
@@ -318,21 +318,36 @@ def edit_usd_asset_path(folder_to_usdcat, ascii_output_mode):
     :param Path folder_to_usdcat:
     '''
     infile_ext, outfile_ext = get_usd_input_output_extensions(ascii_output_mode=ascii_output_mode)
+    files_to_edit = set()
 
-    files_to_edit = tuple(folder_to_usdcat.rglob('*' + _USD_ASCII_FORMATS[True]))  # only editing .usda is relevant
-    logging.debug('PERFORMING {} "USD ASSET PATH EDIT" jobs...'.format(len(files_to_edit)))
+    # First look for .usda files
+    files_to_edit.update(tuple(folder_to_usdcat.rglob('*' + _USD_ASCII_FORMATS[True])))
+    
+    if not files_to_edit:
+        # Look for .usd files
+        # TODO: see if found .usd files are binary or ascii
+        files_to_edit.update(tuple(folder_to_usdcat.rglob('*' + _USD_DEFAULT_EXT)))
 
-    files_to_edit = [infile.as_posix() for infile in files_to_edit]
+    logger.debug('PERFORMING {} "USD ASSET PATH EDIT" jobs...'.format(len(files_to_edit)))
 
-    # First edit if found '.usdc' or '.usda'
-    with fileinput.input(files=files_to_edit, inplace=True) as usdfile:
-        for line in usdfile:
-            print(line.replace(infile_ext + '@', outfile_ext + '@'), end='')
+    if files_to_edit:
+        files_to_edit = [infile.as_posix() for infile in files_to_edit]
 
-    # Second edit if found '.usd'
-    with fileinput.input(files=files_to_edit, inplace=True) as usdfile:
-        for line in usdfile:
-            print(line.replace(_USD_DEFAULT_EXT + '@', outfile_ext + '@'), end='')    
+        # First edit if found '.usdc' or '.usda' in lines
+        with fileinput.input(files=files_to_edit, inplace=True) as usdfile:
+            try:
+                for line in usdfile:
+                    print(line.replace(infile_ext + '@', outfile_ext + '@'), end='')
+            except Exception as e:
+                logger.exception(e)
+            
+        # Second edit if found '.usd' in lines
+        with fileinput.input(files=files_to_edit, inplace=True) as usdfile:
+            try:
+                for line in usdfile:
+                    print(line.replace(_USD_DEFAULT_EXT + '@', outfile_ext + '@'), end='')
+            except Exception as e:
+                logger.exception(e)            
 
 
 def open_explorer(get_folder_method):
