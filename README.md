@@ -86,5 +86,5 @@ The "USD cat" mascot icon and banner were designed by my girlfriend [Rkaixg].
 [Kitchen set]: http://graphics.pixar.com/usd/downloads.html
 [LOPs tutorials]: https://www.sidefx.com/docs/houdini/solaris/tutorials.html
 [asset resolution]: http://graphics.pixar.com/usd/docs/USD-Glossary.html#USDGlossary-AssetResolution
+[Rkaixg]: https://rkaixg.tumblr.com/
 [lion anatomy model]: https://www.artstation.com/artwork/vGG46
-[Rkaixg]: 
