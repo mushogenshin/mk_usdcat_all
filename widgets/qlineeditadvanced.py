@@ -2,9 +2,9 @@ from PySide2 import QtWidgets
 from pathlib import Path
 
 
-class QLineEditAcceptDrop(QtWidgets.QLineEdit):
+class QLineEditAcceptUrlDrop(QtWidgets.QLineEdit):
     def __init__(self, text):
-        super(QLineEditAcceptDrop, self).__init__(text)
+        super(QLineEditAcceptUrlDrop, self).__init__(text)
         self._path_verify_method = self.verify_path
         
     def verify_path(self, *args, **kwargs):
@@ -30,13 +30,13 @@ class QLineEditAcceptDrop(QtWidgets.QLineEdit):
                     self.setText(url_path.as_posix())
 
 
-class QLineEditAcceptDirectoryDrop(QLineEditAcceptDrop):
+class QLineEditAcceptDirectoryDrop(QLineEditAcceptUrlDrop):
     def __init__(self, text):
         super(QLineEditAcceptDirectoryDrop, self).__init__(text)
         self._path_verify_method = Path.is_dir
 
 
-class QLineEditAcceptFileDrop(QLineEditAcceptDrop):
+class QLineEditAcceptFileDrop(QLineEditAcceptUrlDrop):
     def __init__(self, text):
         super(QLineEditAcceptFileDrop, self).__init__(text)
         self._path_verify_method = Path.is_file

@@ -13,6 +13,7 @@ ui/
 rc/
 tests/
 src_img/
+videos/
 build/
 develop-eggs/
 dist/
