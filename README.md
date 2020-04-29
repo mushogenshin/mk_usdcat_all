@@ -62,15 +62,15 @@ There will be a generated log file that details how much time it takes for each 
 <a href="https://youtu.be/zDsFu81Yn5U" title="Mushogenshin's Study of Pixar USD Composition" target="_blank"><img height="540" src="./img/youtube_thumbnail.jpg" alt="A Study of Pixar USD Composition - YouTube Video" /></a>
 </p>
 
-# KNOWN ISSUES
+## KNOWN ISSUES
 
 Using the *.exe* may spare you from all the Python environment setup, but **hython** command prompts will keep popping up throughout the batch conversion process, which rather makes it inconvenient to use your machine during that time.
 
-# FEEDBACK & SUGGESTIONS
+## FEEDBACK & SUGGESTIONS
 
 If you have any feedback or suggestions, feel free to send me a message. Thanks!
 
-# CREDITS
+## CREDITS
 
 The "USD cat" mascot icon and banner were designed by my girlfriend [Rkaixg].
 
