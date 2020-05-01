@@ -40,16 +40,22 @@ Most of the time you would want to perform **usdcat** in bulk. So drop the folde
 
 **Hython** will then summon **usdcat** to perform conversion between USD formats, file by file. This might take a while, firstly of course depending on how many USD files there are in the specified folder, and also how heavy they are, but secondly due to the fact that **hython** also needs to verify your Houdini license each time.
 
-After it's done (you can tell by looking at the progress bar in the UI), you can use the wonderful [usdview] that is also shipped with Houdini Solaris to view and verify the results.
+Behold! Below is a screengrab of the resulted `Kitchen_set` in ASCII:
 
 <p align="center">
-<img height="450" src="./img/ui_drop_file_to_usdview.gif">
+<img src="./img/conversion_test_kitchen_set_screengrab.jpg">
 </p>
 
 There will be a generated log file that details how much time it takes for each conversion job.
 
 <p align="center">
 <img height="450" src="./img/log_file_conversion_time.gif">
+</p>
+
+After the conversion is complete with every USD file in the folder (you can tell by looking at the progress bar in the UI), you can use the wonderful [usdview] that is also shipped with Houdini Solaris to view and verify the results.
+
+<p align="center">
+<img height="450" src="./img/ui_drop_file_to_usdview.gif">
 </p>
 
 # SOME BENCHMARKS

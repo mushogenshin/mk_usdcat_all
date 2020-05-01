@@ -11,7 +11,7 @@ __pycache__/
 batch/
 ui/
 rc/
-tests/
+conversion_tests/
 src_img/
 videos/
 build/
