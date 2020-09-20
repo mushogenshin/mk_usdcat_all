@@ -8,9 +8,10 @@
 
 # WHAT
 
-This is a small, stand-alone, utility tool written in Python for Windows that allows you to batch convert between [Pixar USD] binary and ASCII formats. Under the hood it employs Houdini [hython] and the native USD support in [Houdini Solaris], so Houdini 18 is required, and also at least an Indie license — in order to write out *.usda* file format.
+This is a small, stand-alone, utility tool written in Python that allows you to batch convert between [Pixar USD] binary and ASCII formats. Under the hood it employs Houdini [hython] and the native USD support in [Houdini Solaris], so Houdini 18 is required, and also at least an Indie license — in order to write out *.usda* file format.
 
-A compiled *.exe* is also provided for ease of use.
+  - On Windows: a compiled *.exe* is also provided for ease of use.
+  - On MacOS: no binary is provided. Please see installation guides below.
 
 # WHY
 
@@ -68,9 +69,22 @@ After the conversion is complete with every USD file in the folder (you can tell
 <a href="https://youtu.be/zDsFu81Yn5U" title="Mushogenshin's Study of Pixar USD Composition" target="_blank"><img height="540" src="./img/youtube_thumbnail.jpg" alt="A Study of Pixar USD Composition - YouTube Video" /></a>
 </p>
 
+## INSTALLATION ON MACOS
+
+Before passing the provided `mk_usdcat_all.pyw` as a command-line argument to the Python interpreter installed on your machine in order to launch the UI, we'll need to:
+
+  - Install PySide2: `pip3 install PySide2`
+
+Then run: `python3 path/to/the_pyw_file_in_package_folder`, for example:
+
+<p align="center">
+<img src="./img/macos_terminal_python_argument.png">
+</p>
+
+
 ## KNOWN ISSUES
 
-Using the *.exe* may spare you from all the Python environment setup, but **hython** command prompts will keep popping up throughout the batch conversion process, which rather makes it inconvenient to use your machine during that time.
+On Windows, using the *.exe* may spare you from all the Python environment setup, but **hython** command prompts will keep popping up throughout the batch conversion process, which rather makes it inconvenient to use your machine during that time.
 
 ## FEEDBACK & SUGGESTIONS
 
