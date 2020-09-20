@@ -5,6 +5,7 @@ from functools import partial
 import subprocess
 import fileinput
 import time
+import platform
 import logging as logger
 
 from PySide2 import QtWidgets
@@ -18,7 +19,9 @@ logger.basicConfig(
     format='%(asctime)s:%(levelname)s:%(message)s'
 )
 
-_REQUIRED_BINARIES = ('hython.exe', 'usdcat')
+_CUR_OS = platform.system()  # "Windows", "Darwin", "Linux"
+_HYTHON_BINARY = "hython.exe" if _CUR_OS == "Windows" else "hython"
+_REQUIRED_BINARIES = (_HYTHON_BINARY, 'usdcat')
 _ALL_USD_EXTS = ('.usd', '.usdc', '.usda')
 _USD_DEFAULT_EXT = '.usd'
 _USD_ASCII_FORMATS = {False: 'usdc', True: 'usda'}
@@ -56,7 +59,13 @@ def ui_launch():
     sys.exit(app.exec_())
 
 def ui_init(ui):
-    houdini_latest_install_bin_folder = find_houdini_latest_install_bin_folder()
+    if _CUR_OS == "Windows":
+        guess_install_path = "C:/Program Files/Side Effects Software"
+    elif _CUR_OS == "Darwin":
+        guess_install_path = "/Applications/Houdini/Current/Frameworks/Houdini.framework/Versions/Current/Resources"
+
+    houdini_latest_install_bin_folder = find_houdini_latest_install_bin_folder(guess_install_path)
+
     if houdini_latest_install_bin_folder:
         ui.preq_houdini_bin_folder_lineEdit.setText(houdini_latest_install_bin_folder.as_posix())
     
@@ -125,19 +134,25 @@ def browse_houdini_bin_folder(line_edit, validate_label):
             required_files=_REQUIRED_BINARIES
         )
         
-def find_houdini_latest_install_bin_folder(houdini_install_path='C:/Program Files/Side Effects Software'):
-    '''
-    Presume Houdini is installed in 'C:/'
-    '''
-    found_houdini_latest_install = list(Path(houdini_install_path).glob('Houdini*'))
-    found_houdini_latest_install = sorted(found_houdini_latest_install)[-1] / 'bin' \
-        if found_houdini_latest_install else None
-    return found_houdini_latest_install \
-        if found_houdini_latest_install and found_houdini_latest_install.exists() else None
+def find_houdini_latest_install_bin_folder(houdini_install_path):
+    houdini_install_path = Path(houdini_install_path)
+
+    # In MacOS we're using "Current" symlink instead of looking for all versions installed
+    if _CUR_OS == "Windows":
+        # e.g. 'C:/Program Files/Side Effects Software/Houdini {XX.X.XXX}'
+        houdini_install_path = list(houdini_install_path.glob('Houdini*'))
+        houdini_install_path = sorted(houdini_install_path)[-1] \
+            if houdini_install_path else Path()
+
+    if houdini_install_path != Path():
+        houdini_install_path = houdini_install_path / "bin"
+
+    return houdini_install_path \
+        if houdini_install_path.exists() and houdini_install_path != Path() else Path()
 
 def validate_folder_path(folder_path, required_files=()):
     '''
-    Check if folder exists, and whether there are files of specified types within that folder
+    Check if folder exists, and whether there are specified files within that folder
     '''
     folder_path = Path(folder_path)
 
@@ -147,8 +162,7 @@ def validate_folder_path(folder_path, required_files=()):
     else:
         # Validate all the specified files inside
         for required_file in required_files:
-            required_file = (folder_path / required_file)
-            if not (required_file.exists() and required_file.is_file()):
+            if not (folder_path / required_file).is_file():
                 logger.warning('File does not exist: {}'.format(required_file))
                 return False
 
@@ -271,7 +285,7 @@ def batch_conversion(
     if bin_path_validated and folder_to_usdcat_validated:
 
         bin_path = Path(bin_path)
-        hython_path = bin_path / 'hython.exe'
+        hython_path = bin_path / _HYTHON_BINARY
         usdcat_module_path = bin_path / 'usdcat'
 
         folder_to_usdcat = Path(folder_to_usdcat)
@@ -351,11 +365,15 @@ def edit_usd_asset_path(folder_to_usdcat, ascii_output_mode):
 
 
 def open_explorer(get_folder_method):
-
     folder_path = Path(get_folder_method())
 
     if folder_path.exists() and folder_path.is_dir():
-        subprocess.Popen(['explorer', str(PureWindowsPath(folder_path))])
+        if _CUR_OS == "Windows":
+            cmd = ['explorer', str(PureWindowsPath(folder_path))]
+        elif _CUR_OS == "Darwin":
+            cmd = ['open', '-R', folder_path.as_posix()]
+
+        subprocess.Popen(cmd)
 
 def launch_usdview(get_bin_folder_method, get_file_to_usdview_method):
     bin_path = get_bin_folder_method()
@@ -367,7 +385,7 @@ def launch_usdview(get_bin_folder_method, get_file_to_usdview_method):
     if bin_path_validated:
 
         bin_path = Path(bin_path)
-        hython_path = bin_path / 'hython.exe'
+        hython_path = bin_path / _HYTHON_BINARY
         usdview_module_path = bin_path / 'usdview'
 
         cmd = [
