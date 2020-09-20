@@ -1,6 +1,6 @@
 import sys
 import re
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 from functools import partial
 import subprocess
 import fileinput
@@ -369,6 +369,7 @@ def open_explorer(get_folder_method):
 
     if folder_path.exists() and folder_path.is_dir():
         if _CUR_OS == "Windows":
+            from Path import PureWindowsPath
             cmd = ['explorer', str(PureWindowsPath(folder_path))]
         elif _CUR_OS == "Darwin":
             cmd = ['open', '-R', folder_path.as_posix()]
